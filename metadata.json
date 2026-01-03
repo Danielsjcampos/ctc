@@ -1,0 +1,7 @@
+{
+  "name": "Elite Shield Shooting Club",
+  "description": "A premium, high-tech landing page for a professional sports shooting club in Brazil, featuring advanced UI/UX and dark mode aesthetics.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
