@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Upload, Loader2, Youtube, MapPin, Phone, Globe, Layout, Image as ImageIcon, ShieldCheck } from 'lucide-react';
+import { Save, Upload, Loader2, Youtube, MapPin, Phone, Globe, Layout, Image as ImageIcon, ShieldCheck, Sparkles, Bot } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSystemSettings } from '../../hooks/useSystemSettings';
 
@@ -35,6 +35,9 @@ const SettingsView: React.FC = () => {
             facebook_url: formData.facebook_url,
             email_contact: formData.email_contact,
             membership_card_template: formData.membership_card_template,
+            ai_provider: formData.ai_provider,
+            ai_api_key: formData.ai_api_key,
+            ai_avatar_url: formData.ai_avatar_url,
             updated_at: new Date().toISOString()
         };
 
@@ -286,6 +289,88 @@ const SettingsView: React.FC = () => {
                                 />
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                {/* AI CONFIGURATION */}
+                <section className="bg-zinc-900/30 p-6 md:p-8 rounded-[32px] md:rounded-[40px] border border-white/5 space-y-8">
+                    <h2 className="text-lg md:text-xl font-black uppercase text-white flex items-center gap-3 italic">
+                        <Sparkles className="w-5 h-5 text-cyan-400" /> Inteligência <span className="text-cyan-400">Artificial</span>
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Provedor de AI</label>
+                            <select
+                                value={formData.ai_provider || 'openai'}
+                                onChange={(e) => handleChange('ai_provider', e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 md:p-5 text-white font-bold focus:border-cyan-400 outline-none transition-all text-sm appearance-none"
+                            >
+                                <option value="openai">OpenAI (GPT-4 / 3.5)</option>
+                                <option value="gemini">Google Gemini</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Chave de API (Secret Key)</label>
+                            <input
+                                type="password"
+                                value={formData.ai_api_key || ''}
+                                onChange={(e) => handleChange('ai_api_key', e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 md:p-5 text-white font-bold focus:border-cyan-400 outline-none transition-all text-sm font-mono"
+                                placeholder="sk-..."
+                            />
+                            <p className="text-[9px] text-gray-600 mt-2 ml-2">Sua chave será armazenada de forma segura na base de dados.</p>
+                        </div>
+
+                        <div className="md:col-span-2 space-y-4 pt-4 border-t border-white/5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Avatar do Agente</label>
+                            <div className="flex flex-col sm:flex-row items-center gap-6">
+                                <div className="w-24 h-24 rounded-full bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden relative group shrink-0">
+                                    {formData.ai_avatar_url ? (
+                                        <img src={formData.ai_avatar_url} alt="AI Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Bot className="w-10 h-10 text-gray-700" />
+                                    )}
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <label className="cursor-pointer">
+                                            <Upload className="w-6 h-6 text-white" />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={async (e) => {
+                                                    if (!e.target.files || e.target.files.length === 0) return;
+                                                    setUploading(true);
+                                                    const file = e.target.files[0];
+                                                    const fileName = `ai-avatar-${Date.now()}.${file.name.split('.').pop()}`;
+                                                    const { error } = await supabase.storage.from('firearm-images').upload(fileName, file);
+
+                                                    if (!error) {
+                                                        const { data } = supabase.storage.from('firearm-images').getPublicUrl(fileName);
+                                                        handleChange('ai_avatar_url', data.publicUrl);
+                                                    } else {
+                                                        alert('Erro no upload.');
+                                                    }
+                                                    setUploading(false);
+                                                }}
+                                                disabled={uploading}
+                                            />
+                                        </label>
+                                    </div>
+                                    {uploading && <div className="absolute inset-0 bg-black/80 flex items-center justify-center"><Loader2 className="w-6 h-6 text-cyan-400 animate-spin" /></div>}
+                                </div>
+                                <div className="flex-grow space-y-2 w-full">
+                                    <input
+                                        value={formData.ai_avatar_url || ''}
+                                        onChange={(e) => handleChange('ai_avatar_url', e.target.value)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 md:p-5 text-white font-bold focus:border-cyan-400 outline-none transition-all text-xs font-mono"
+                                        placeholder="https://..."
+                                    />
+                                    <p className="text-[9px] text-gray-500 italic">Faça upload da imagem ou cole uma URL externa.</p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </section>
             </div>

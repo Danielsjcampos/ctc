@@ -4,10 +4,12 @@ import { ShieldCheck, History, Database, Search, FileText, Download, Loader2, Ca
 import { supabase } from '../../lib/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useSystemSettings } from '../../hooks/useSystemSettings';
 
 const ComplianceView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const { settings } = useSystemSettings();
 
   const generateMonthlyReport = async () => {
     setLoading(true);
@@ -62,15 +64,35 @@ const ComplianceView: React.FC = () => {
       doc.setFontSize(9);
       doc.setTextColor(200, 200, 200);
       doc.setFont("helvetica", "bold");
-      doc.text("ELITE COMMAND - CLUBE DE TIRO", 200, 15, { align: "right" });
+      const clubName = settings?.club_name ? settings.club_name.toUpperCase() : "ELITE COMMAND - CLUBE DE TIRO";
+      doc.text(clubName, 200, 15, { align: "right" });
 
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(150, 150, 150);
+      // We don't have CNPJ in settings yet, using default or placeholder if not available.
+      // If user wants CNPJ later, we should add it to settings. For now preserving default format or minimal info.
       doc.text("CNPJ: 00.000.000/0001-00", 200, 20, { align: "right" });
-      doc.text("Av. Central, 1000 - Centro, São Paulo - SP", 200, 24, { align: "right" });
-      doc.text("Tel: (11) 99999-9999 | contato@elitecommand.com.br", 200, 28, { align: "right" });
+
+      const address = settings?.address || "Av. Central, 1000 - Centro, São Paulo - SP";
+      doc.text(address, 200, 24, { align: "right" });
+
+      const phone = settings?.phone || "(11) 99999-9999";
+      const email = settings?.email_contact || "contato@elitecommand.com.br";
+      doc.text(`Tel: ${phone} | ${email}`, 200, 28, { align: "right" });
+
       doc.text(`Gerado em: ${new Date().toLocaleString()}`, 200, 35, { align: "right" });
+
+      // Try to add Logo if available
+      if (settings?.logo_url) {
+        try {
+          // For PDF generation with images across domains, we might face CORS issues.
+          // Ideally we convert URL to Base64 or use an image inside the project.
+          // We will try to add it. If it fails, pdf simply shows nothing there or we catch error.
+          // doc.addImage(settings.logo_url, 'PNG', 160, 5, 10, 10);
+          // Skipping image for now to avoid CORS crash without proxy.
+        } catch (e) { console.warn('Logo add failed', e) }
+      }
 
       // Stats
       const totalShots = sessions.reduce((acc, curr) => acc + (curr.total_shots || 0), 0);

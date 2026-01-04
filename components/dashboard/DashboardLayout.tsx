@@ -27,6 +27,7 @@ import {
   MoreVertical,
   Plus
 } from 'lucide-react';
+import AiAssistant from '../ai/AiAssistant';
 import { useAuth } from '../../store/authStore';
 import { Permission } from '../../types';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
@@ -301,6 +302,7 @@ const DashboardLayout: React.FC = () => {
 
       <MobileBottomNav />
       <AllModulesOverlay />
+      <AiAssistant />
     </div>
   );
 };

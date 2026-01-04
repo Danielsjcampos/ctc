@@ -111,6 +111,8 @@ CREATE TABLE courses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   date TEXT NOT NULL,
+  start_time TEXT,
+  end_time TEXT,
   category TEXT NOT NULL,
   description TEXT,
   image_url TEXT,
