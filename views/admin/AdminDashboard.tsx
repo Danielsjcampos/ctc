@@ -67,43 +67,39 @@ const AdminDashboard: React.FC = () => {
       try {
         setLoading(true);
 
-        // 1. Fetch Profiles (Affiliates, Status, Expiry)
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, status, is_affiliated, affiliation_expiry, role, ranking_points, name');
+        // PARALLEL FETCHING - Optimization to fix slow loading
+        const [
+          profilesResult,
+          leadsResult,
+          coursesResult,
+          eventLeadsResult,
+          salesResult,
+          sessionsResult,
+          firearmsResult
+        ] = await Promise.all([
+          // 1. Fetch Profiles
+          supabase.from('profiles').select('id, status, is_affiliated, affiliation_expiry, role, ranking_points, name'),
+          // 2. Fetch CRM Leads (Count only)
+          supabase.from('crm_leads').select('*', { count: 'exact', head: true }),
+          // 3. Fetch Courses
+          supabase.from('courses').select('id, enrolled, price'),
+          // 4. Fetch Event Leads
+          supabase.from('event_leads').select('amount_paid, created_at, email'),
+          // 5. Fetch Sales
+          supabase.from('sales').select('total, created_at'),
+          // 6. Fetch Club Sessions
+          supabase.from('club_sessions').select('total_shots, firearm_model'),
+          // 7. Fetch Firearms
+          supabase.from('firearms').select('id, owner_id, profiles(role)')
+        ]);
 
-        // 2. Fetch CRM Leads
-        const { count: leadsCount } = await supabase
-          .from('crm_leads')
-          .select('*', { count: 'exact', head: true });
-
-        // 3. Fetch Courses
-        const { data: courses } = await supabase
-          .from('courses')
-          .select('id, enrolled, price');
-
-        // 4. Fetch Event Leads (Enrollments & Financials)
-        const { data: eventLeads } = await supabase
-          .from('event_leads')
-          .select('amount_paid, created_at, email'); // Payment status? assuming amount_paid > 0 is valid revenue
-
-        // 5. Fetch Sales (Financials)
-        const { data: sales } = await supabase
-          .from('sales')
-          .select('total, created_at');
-
-        // 6. Fetch Club Sessions (Shots, Weapons usage)
-        const { data: sessions } = await supabase
-          .from('club_sessions')
-          .select('total_shots, firearm_model');
-
-        // 7. Fetch Firearms (Arsenal)
-        // Note: We need to know which are Club vs Affiliate. 
-        // We'll fetch all and filter by owner's role if we can join, or just basic count for now.
-        // Supabase select with join matches specific syntax.
-        const { data: firearms } = await supabase
-          .from('firearms')
-          .select('id, owner_id, profiles(role)');
+        const profiles = profilesResult.data;
+        const leadsCount = leadsResult.count;
+        const courses = coursesResult.data;
+        const eventLeads = eventLeadsResult.data;
+        const sales = salesResult.data;
+        const sessions = sessionsResult.data;
+        const firearms = firearmsResult.data;
 
         // --- PROCESSING DATA ---
 

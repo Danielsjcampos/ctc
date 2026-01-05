@@ -15,9 +15,13 @@ export function Header() {
 
     const links = [
         {
+            label: 'Início',
+            href: '/',
+        },
+        {
             label: 'Eventos',
             href: '/eventos',
-            isExternal: true, // Mark as non-anchor
+            isExternal: true,
         },
         {
             label: 'O Clube',
@@ -30,10 +34,6 @@ export function Header() {
         {
             label: 'Ranking',
             href: '#ranking',
-        },
-        {
-            label: 'Calendário',
-            href: '#timeline',
         }
     ];
 

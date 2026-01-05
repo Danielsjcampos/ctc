@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -29,11 +28,13 @@ import {
 } from 'lucide-react';
 import AiAssistant from '../ai/AiAssistant';
 import { useAuth } from '../../store/authStore';
+import { useSystemSettings } from '../../hooks/useSystemSettings';
 import { Permission } from '../../types';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarBody, SidebarLink } from '../ui/sidebar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import { checkConnection } from '../../lib/supabase';
 
 interface MenuItem {
   name: string;
@@ -44,6 +45,7 @@ interface MenuItem {
 
 const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { settings } = useSystemSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -214,6 +216,39 @@ const DashboardLayout: React.FC = () => {
     </div>
   );
 
+  const DbStatusMonitor = () => {
+    const [status, setStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+
+    const check = async () => {
+      const isOk = await checkConnection();
+      setStatus(isOk ? 'online' : 'offline');
+    };
+
+    useEffect(() => {
+      check();
+      const interval = setInterval(check, 30000); // Verify every 30s
+      return () => clearInterval(interval);
+    }, []);
+
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+        <div className={cn(
+          "w-2 h-2 rounded-full animate-pulse",
+          status === 'online' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
+            status === 'offline' ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-gray-500"
+        )} />
+        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">
+          DB {status === 'online' ? 'estável' : status === 'offline' ? 'instável' : '...'}
+        </span>
+        {status === 'offline' && (
+          <button onClick={check} className="text-[8px] font-black text-red-500 underline ml-1 hover:text-white">
+            RECONECTAR
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-screen bg-[#050505] overflow-hidden text-white font-sans w-full relative">
       <div className="hidden lg:flex">
@@ -272,10 +307,13 @@ const DashboardLayout: React.FC = () => {
 
       <div className="flex-grow flex flex-col overflow-hidden w-full relative">
         <header className="h-20 bg-[#0a0a0a] border-b border-white/5 flex items-center justify-between px-6 md:px-8 shrink-0 z-40">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">
               {user?.role === 'SHOOTER' ? 'ÁREA DO ATIRADOR' : 'PAINEL ADMINISTRATIVO'}
             </h2>
+            <div className="hidden sm:block">
+              <DbStatusMonitor />
+            </div>
           </div>
 
           <div className="flex items-center space-x-4 md:space-x-6">
@@ -302,7 +340,7 @@ const DashboardLayout: React.FC = () => {
 
       <MobileBottomNav />
       <AllModulesOverlay />
-      <AiAssistant />
+      {settings?.ai_enabled && <AiAssistant />}
     </div>
   );
 };

@@ -14,6 +14,10 @@ export interface SystemSettings {
     facebook_url: string | null;
     email_contact: string | null;
     membership_card_template: string | null;
+    ai_provider: string;
+    ai_api_key: string;
+    ai_avatar_url: string | null;
+    ai_enabled: boolean;
 }
 
 export function useSystemSettings() {
